@@ -1,3 +1,5 @@
-.vs
-bin
-obj
+__pycache__
+input
+versions
+final
+data.csv
