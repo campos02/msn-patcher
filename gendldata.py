@@ -2,38 +2,6 @@ import os
 import re
 from itertools import groupby
 
-code = {
-	'English - United States': 'en',
-	'Spanish': 'es',
-	'Arabic': 'ar',
-	'China': 'zh-cn',
-	'Twi': 'zh-tw',
-	'Danish': 'da',
-	'Czech'    : 'CS',
-	'Danish'   : 'DA',
-	'Dutch'    : 'NL',
-	'English'  : 'EN',
-	'Finnish'  : 'FI',
-	'French'   : 'FR',
-	'German'   : 'DE',
-	'Greek'    : 'EL',
-	'Hebrew'   : 'HE',
-	'Hungarian': 'HU',
-	'Italian'  : 'IT',
-	'Japanese' : 'JA',
-	'Korean'   : 'KO',
-	'Norwegian': 'NO',
-	'Polish'   : 'PL',
-	'Russian'  : 'RU',
-	'Slovak'   : 'SK',
-	'Slovene': 'SL',
-	'Spanish'  : 'ES',
-	'Swedish'  : 'SV',
-	'Turkish'  : 'TR',
-	'Portuguese - Brazil': 'PT-BR',
-	'Portuguese': 'PT-PT',
-}
-
 def parse_name(name):
 	m = re.search(r'-(\d+(?:\.\d+)*)-(.+)\.', name)
 	if not m:
@@ -75,10 +43,20 @@ for name in os.listdir('final'):
 	m = all[k]
 	m.patched_installer = name
 
+prefixes = list(reversed([
+	(1,), (2,), (3,), (4,), (5,), (6,), (7, 0), (7, 5),
+]))
+
 print('langcode,patched_installer,installer')
 all = sorted(all.values(), key = lambda m: (m.langcode, m.version))
 for langcode, msns in groupby(all, key = lambda m: m.langcode):
-	msns = sorted(msns, key = (lambda m: m.version), reverse = True)
-	
-	for m in msns:
-		print(','.join([langcode, m.patched_installer or '', m.installer or '']))
+	msns = list(msns)
+	for pre in prefixes:
+		msns2 = list(sorted(filter((lambda m: m.version[:len(pre)] == pre), msns), key = (lambda m: m.version), reverse = True))
+		installer = None
+		patched_installer = None
+		for m in msns2:
+			installer = installer or m.installer
+			patched_installer = patched_installer or m.patched_installer
+		if installer or patched_installer:
+			print(','.join([langcode, patched_installer or '', installer or '']))
