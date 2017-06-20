@@ -1,5 +1,6 @@
+from pathlib import Path
 import os
-from os.path import abspath, exists
+from os.path import abspath
 import shutil
 import re
 import subprocess
@@ -7,17 +8,19 @@ import subprocess
 PATCH_NAME = 'escargot-msn'
 PATCH_VERSION = 1
 
+DIR_INPUT = Path('input')
+DIR_VERSIONS = Path('versions')
+DIR_FINAL = Path('final')
+
 def main():
-	mkdirp('input')
-	mkdirp('versions')
-	mkdirp('final')
+	mkdirp(DIR_INPUT)
+	mkdirp(DIR_VERSIONS)
+	mkdirp(DIR_FINAL)
 	
-	download_all()
-	
-	for name in os.listdir('input'):
-		name = name.replace('.exe', '')
+	for p in DIR_INPUT.iterdir():
+		name = p.stem
 		print(name)
-		mkdirp('versions/' + name)
+		mkdirp(DIR_VERSIONS / name)
 		extract_installer(name)
 		v, _ = parse_name(name)
 		if v[0] < 5:
@@ -31,23 +34,23 @@ def main():
 			# Doesn't work yet
 			pass
 
-def mkdirp(d):
-	os.makedirs(d, exist_ok = True)
+def mkdirp(p):
+	p.mkdir(parents = True, exist_ok = True)
 
 def patch_extracted_msi(name):
-	outdir = 'versions/{}/msi-patched'.format(name)
-	if exists(outdir):
+	outdir = DIR_VERSIONS / name / 'msi-patched'
+	if outdir.exists():
 		return
-	shutil.copytree('versions/{}/msi'.format(name), outdir)
+	shutil.copytree(str(DIR_VERSIONS / name / 'msi'), str(outdir))
 	
 	try:
-		msi_files = outdir + '/files'
+		msi_files = outdir / 'files'
 		
 		v, _ = parse_name(name)
 		msn = find_file(msi_files, r'msnmsgr.*')
 		assert msn is not None
 		
-		with open(msn, 'rb') as fh:
+		with msn.open('rb') as fh:
 			msn_content = fh.read()
 		msn_content = msn_content.replace(b'messenger.hotmail.com', b'm1.escargot.log1p.xyz')
 		if v[0:2] < (7, 5):
@@ -55,27 +58,27 @@ def patch_extracted_msi(name):
 			msn_content = msn_content.replace(b'PassportURLs', b'Passporturls')
 		if v[0] >= 6:
 			msn_content = msn_content.replace(b'http://config.messenger.msn.com/Config/MsgrConfig.asmx', b'https://escargot.log1p.xyz/etc/MsgrConfig?padding=qqqq')
-		with open(msn, 'wb') as fh:
+		with msn.open('wb') as fh:
 			fh.write(msn_content)
 		
 		if v[0:2] >= (7, 5):
 			msidcrl = find_file(msi_files, r'msidcrl.dll')
 			assert msidcrl is not None
-			os.remove(msidcrl)
-			shutil.copyfile('msidcrl.dll', msidcrl)
+			os.remove(str(msidcrl))
+			shutil.copyfile('msidcrl.dll', str(msidcrl))
 	except:
-		shutil.rmtree(outdir)
+		shutil.rmtree(str(outdir))
 		raise
 
 def find_file(dir, regex):
-	for fn in os.listdir(dir):
-		if re.match(regex, fn.lower()):
-			return dir + '/' + fn
+	for p in dir.iterdir():
+		if re.match(regex, p.name.lower()):
+			return p
 	return None
 
 def pack_patched_msi(name):
-	outfile = 'final/escargot-{}.msi'.format(name)
-	if exists(outfile):
+	outfile = DIR_FINAL / 'escargot-{}.msi'.format(name)
+	if outfile.exists():
 		return
 	
 	xml2msi = abspath('msi2xml/xml2msi.exe')
@@ -89,7 +92,7 @@ def pack_patched_msi(name):
 		xml2msi, '-q', '-m',
 		#'-d', product_version_guid, # --product-code
 		#'-g', product_guid, # --upgrade-code
-		'-o', outfile,
+		'-o', str(outfile),
 		xml
 	])
 
@@ -107,23 +110,23 @@ def gen_code(*parts):
 	)
 
 def extract_msi(name):
-	outdir = 'versions/{}/msi'.format(name)
-	if exists(outdir):
-		return
-	os.mkdir(outdir)
+	outdir = DIR_VERSIONS / name / 'msi'
+	if outdir.exists(): return
+	outdir.mkdir(parents = True)
+	
+	here = abspath('.')
 	
 	try:
 		msi2xml = abspath('msi2xml/msi2xml.exe')
 		msi = abspath('versions/{}/extracted/MsnMsgs.msi'.format(name))
-		here = abspath('.')
 		
-		os.chdir(outdir)
+		os.chdir(str(outdir))
 		subprocess.call([
 			msi2xml, '-q', '-b', 'streams', '-c', 'files',
 			'-o', 'MsnMsgs.xml', msi
 		])
 	except:
-		shutil.rmtree(outdir)
+		shutil.rmtree(str(outdir))
 		raise
 	finally:
 		os.chdir(here)
@@ -137,35 +140,22 @@ def parse_name(name):
 	return v, l
 
 def extract_installer(name):
-	outdir = abspath('versions/{}/extracted'.format(name))
-	if exists(outdir):
-		return
-	os.mkdir(outdir)
+	outdir = DIR_VERSIONS / name / 'extracted'
+	if outdir.exists(): return
+	outdir.mkdir(parents = True)
+	
+	exefile = DIR_INPUT / '{}.exe'.format(name)
+	msifile = DIR_INPUT / '{}.msi'.format(name)
 	try:
-		subprocess.run(['input/{}.exe'.format(name), '/T:{}'.format(outdir), '/C', '/Q'], check = True, stdout = subprocess.PIPE)
+		if exefile.exists():
+			subprocess.run([str(exefile), '/T:{}'.format(abspath(str(outdir))), '/C', '/Q'], check = True, stdout = subprocess.PIPE)
+		elif msifile.exists():
+			shutil.copy(str(msifile), str(outdir / 'MsnMsgs.msi'))
+		else:
+			assert False
 	except:
-		shutil.rmtree(outdir)
+		shutil.rmtree(str(outdir))
 		raise
-
-def download_all():
-	import data
-	for d in data.DOWNLOADS:
-		fn = 'input/msn-{}-{}.exe'.format(d.version, d.langcode)
-		_get_to_file(d.installer_official, fn)
-
-def _get_to_file(url, filename):
-	import requests
-	if exists(filename):
-		return
-	print("download", filename)
-	r = requests.get(url)
-	try:
-		r.raise_for_status()
-	except:
-		return
-	with open(filename, 'wb') as fh:
-		for chunk in r.iter_content(chunk_size = 8192):
-			if chunk: fh.write(chunk)
 
 if __name__ == '__main__':
 	main()

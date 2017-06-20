@@ -81,4 +81,4 @@ for langcode, msns in groupby(all, key = lambda m: m.langcode):
 	msns = sorted(msns, key = (lambda m: m.version), reverse = True)
 	
 	for m in msns:
-		print(','.join([langcode, extract_version_str(m.patched_installer) or '', extract_version_str(m.installer) or '']))
+		print(','.join([langcode, m.patched_installer or '', m.installer or '']))
