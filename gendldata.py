@@ -44,7 +44,7 @@ for name in os.listdir('final'):
 	m.patched_installer = name
 
 prefixes = list(reversed([
-	(1,), (2,), (3,), (4,), (5,), (6,), (7, 0), (7, 5),
+	(1,), (2,), (3,), (4,), (5,), (6,), (7, 0), (7, 5), (8, 1, 178),
 ]))
 
 print('langcode,patched_installer,installer')

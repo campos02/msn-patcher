@@ -26,7 +26,7 @@ def main():
 		if v[0] < 5:
 			# Figure it out later
 			pass
-		elif v[0] < 8:
+		elif v[0:2] < (8, 5):
 			extract_msi(name)
 			patch_extracted_msi(name)
 			pack_patched_msi(name)
@@ -52,27 +52,44 @@ def patch_extracted_msi(name):
 		
 		with msn.open('rb') as fh:
 			msn_content = fh.read()
-		msn_content = msn_content.replace(b'messenger.hotmail.com', b'm1.escargot.log1p.xyz')
+		msn_content = replace(msn_content, b'messenger.hotmail.com', b'm1.escargot.log1p.xyz')
 		if v[0:2] < (7, 5):
-			msn_content = msn_content.replace(b'nexus.passport.com/rdr/pprdr.asp', b'm1.escargot.log1p.xyz/nexus-mock')
-			msn_content = msn_content.replace(b'PassportURLs', b'Passporturls')
+			msn_content = replace(msn_content, b'nexus.passport.com/rdr/pprdr.asp', b'm1.escargot.log1p.xyz/nexus-mock')
+			msn_content = replace(msn_content, b'PassportURLs', b'Passporturls')
 		if v[0] >= 6:
-			msn_content = msn_content.replace(b'http://config.messenger.msn.com/Config/MsgrConfig.asmx', b'https://escargot.log1p.xyz/etc/MsgrConfig?padding=qqqq')
+			msn_content = replace(msn_content, b'http://config.messenger.msn.com/Config/MsgrConfig.asmx', b'https://escargot.log1p.xyz/etc/MsgrConfig?padding=qqqq')
+		if (8, 0) <= v[0:2] <= (8, 1):
+			msn_content = replace(msn_content, b'byrdr.omega.contacts.msn.com', b'ebyrdromegactcsmsn.log1p.xyz')
+			msn_content = replace(msn_content, b'tkrdr.storage.msn.com', b'etkrdrstmsn.log1p.xyz')
+			msn_content = replace(msn_content, b'//ows.messenger.msn.com', b'//eowsmsgrmsn.log1p.xyz')
+			msn_content = replace(msn_content, b'//rsi.hotmail.com', b'//ersih.log1p.xyz')
+		
 		with msn.open('wb') as fh:
 			fh.write(msn_content)
 		
-		if v[0:2] >= (7, 5):
+		if v[0:2] == (7, 5):
 			msidcrl = find_file(msi_files, r'msidcrl.dll')
 			assert msidcrl is not None
+		elif v[0:3] == (8, 1, 178):
+			msidcrl = find_file(msi_files, r'msidcrl40.dll')
+			assert msidcrl is not None
+		else:
+			msidcrl = None
+		
+		if msidcrl:
 			os.remove(str(msidcrl))
 			shutil.copyfile('msidcrl.dll', str(msidcrl))
 	except:
 		shutil.rmtree(str(outdir))
 		raise
 
+def replace(content, src, dst):
+	assert len(src) == len(dst)
+	return content.replace(src, dst)
+
 def find_file(dir, regex):
 	for p in dir.iterdir():
-		if re.match(regex, p.name.lower()):
+		if re.search(regex, p.name.lower()):
 			return p
 	return None
 

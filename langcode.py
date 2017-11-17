@@ -52,6 +52,9 @@ LANGCODE = {
 	'Portuguese - Brazil': 'PT-BR',
 	'Portuguese': 'PT-PT',
 	'Portuguese - Portugal': 'PT-PT',
+	'Estonian - Estonia': 'ET',
+	'Romanian - Romania': 'RO',
+	'Thai - Thailand': 'TH',
 }
 LANGCODE = {
 	k.lower(): v.lower() for k, v in LANGCODE.items()
