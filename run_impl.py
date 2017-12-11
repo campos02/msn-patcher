@@ -8,9 +8,10 @@ import subprocess
 PATCH_NAME = 'escargot-msn'
 PATCH_VERSION = 1
 
-DIR_INPUT = Path('input')
-DIR_VERSIONS = Path('versions')
-DIR_FINAL = Path('final')
+ROOT = Path('d:/data/msn-patcher')
+DIR_INPUT = ROOT / 'input'
+DIR_VERSIONS = ROOT / 'versions'
+DIR_FINAL = ROOT / 'final'
 
 def main():
 	mkdirp(DIR_INPUT)
@@ -26,7 +27,7 @@ def main():
 		if v[0] < 5:
 			# Figure it out later
 			pass
-		elif v[0:2] < (8, 5):
+		elif v[0:1] < (9,):
 			extract_msi(name)
 			patch_extracted_msi(name)
 			pack_patched_msi(name)
@@ -58,7 +59,7 @@ def patch_extracted_msi(name):
 			msn_content = replace(msn_content, b'PassportURLs', b'Passporturls')
 		if v[0] >= 6:
 			msn_content = replace(msn_content, b'http://config.messenger.msn.com/Config/MsgrConfig.asmx', b'https://escargot.log1p.xyz/etc/MsgrConfig?padding=qqqq')
-		if (8, 0) <= v[0:2] <= (8, 1):
+		if (8, 0) <= v[0:1] <= (8,):
 			msn_content = replace(msn_content, b'byrdr.omega.contacts.msn.com', b'ebyrdromegactcsmsn.log1p.xyz')
 			msn_content = replace(msn_content, b'tkrdr.storage.msn.com', b'etkrdrstmsn.log1p.xyz')
 			msn_content = replace(msn_content, b'//ows.messenger.msn.com', b'//eowsmsgrmsn.log1p.xyz')
@@ -70,7 +71,7 @@ def patch_extracted_msi(name):
 		if v[0:2] == (7, 5):
 			msidcrl = find_file(msi_files, r'msidcrl.dll')
 			assert msidcrl is not None
-		elif v[0:3] == (8, 1, 178):
+		elif v[0:1] == (8,):
 			msidcrl = find_file(msi_files, r'msidcrl40.dll')
 			assert msidcrl is not None
 		else:
@@ -99,7 +100,7 @@ def pack_patched_msi(name):
 		return
 	
 	xml2msi = abspath('msi2xml/xml2msi.exe')
-	xml = abspath('versions/{}/msi-patched/MsnMsgs.xml'.format(name))
+	xml = str(DIR_VERSIONS / '{}/msi-patched/MsnMsgs.xml'.format(name))
 	
 	#v, langcode = parse_name(name)
 	#product_guid = gen_code(PATCH_NAME, v[0], langcode)
@@ -135,10 +136,10 @@ def extract_msi(name):
 	
 	try:
 		msi2xml = abspath('msi2xml/msi2xml.exe')
-		msi = abspath('versions/{}/extracted/MsnMsgs.msi'.format(name))
+		msi = str(DIR_VERSIONS / '{}/extracted/MsnMsgs.msi'.format(name))
 		
 		os.chdir(str(outdir))
-		subprocess.call([
+		subprocess.check_call([
 			msi2xml, '-q', '-b', 'streams', '-c', 'files',
 			'-o', 'MsnMsgs.xml', msi
 		])

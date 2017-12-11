@@ -2,6 +2,8 @@ import os
 import re
 from itertools import groupby
 
+from run_impl import DIR_INPUT, DIR_FINAL
+
 def parse_name(name):
 	m = re.search(r'-(\d+(?:\.\d+)*)-(.+)\.', name)
 	if not m:
@@ -27,7 +29,8 @@ class MSNVersion:
 
 all = {}
 
-for name in os.listdir('input'):
+for f in DIR_INPUT.iterdir():
+	name = f.name
 	v, l = parse_name(name)
 	k = (v, l)
 	if k not in all:
@@ -35,7 +38,8 @@ for name in os.listdir('input'):
 	m = all[k]
 	m.installer = name
 
-for name in os.listdir('final'):
+for f in DIR_FINAL.iterdir():
+	name = f.name
 	v, l = parse_name(name)
 	k = (v, l)
 	if k not in all:
@@ -44,7 +48,7 @@ for name in os.listdir('final'):
 	m.patched_installer = name
 
 prefixes = list(reversed([
-	(1,), (2,), (3,), (4,), (5,), (6,), (7, 0), (7, 5), (8, 1, 178),
+	(1,), (2,), (3,), (4,), (5,), (6,), (7, 0), (7, 5), (8, 1, 178), (8, 5,),
 ]))
 
 print('langcode,patched_installer,installer')
