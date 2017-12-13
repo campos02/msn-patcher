@@ -27,7 +27,7 @@ def main():
 		if v[0] < 5:
 			# Figure it out later
 			pass
-		elif v[0:1] < (9,):
+		elif v[0] < 9:
 			extract_msi(name)
 			patch_extracted_msi(name)
 			pack_patched_msi(name)
@@ -59,7 +59,7 @@ def patch_extracted_msi(name):
 			msn_content = replace(msn_content, b'PassportURLs', b'Passporturls')
 		if v[0] >= 6:
 			msn_content = replace(msn_content, b'http://config.messenger.msn.com/Config/MsgrConfig.asmx', b'https://escargot.log1p.xyz/etc/MsgrConfig?padding=qqqq')
-		if (8, 0) <= v[0:1] <= (8,):
+		if v[0] == 8:
 			msn_content = replace(msn_content, b'byrdr.omega.contacts.msn.com', b'ebyrdromegactcsmsn.log1p.xyz')
 			msn_content = replace(msn_content, b'tkrdr.storage.msn.com', b'etkrdrstmsn.log1p.xyz')
 			msn_content = replace(msn_content, b'//ows.messenger.msn.com', b'//eowsmsgrmsn.log1p.xyz')
