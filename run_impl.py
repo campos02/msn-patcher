@@ -14,8 +14,7 @@ PATCH_VERSION = 1
 PATCH_DLL = 'escargot.dll'
 PATCH_DLL_FUNC = 'ImportMe'
 
-#ROOT = Path('d:/data/msn-patcher')
-ROOT = Path('c:/home/escargot/msn-patcher')
+ROOT = Path('./working-dir').resolve()
 DIR_INPUT = ROOT / 'input'
 DIR_VERSIONS = ROOT / 'versions'
 DIR_INSTALLER = ROOT / 'installer'
@@ -184,7 +183,7 @@ def patch_extracted_msi(name):
 		msi_product_code = get_msi_product_code_from_xml(msi_xml_root)
 		assert msi_product_code is not None
 		
-		msnmsgr_elm = msi_xml_root.find('/table[@name="Component"]')
+		msnmsgr_elm = msi_xml_root.find('./table[@name="Component"]')
 		assert msnmsgr_elm is not None
 		msnmsgr_rows = msnmsgr_elm.findall('row')
 		assert msnmsgr_rows is not None
@@ -198,7 +197,7 @@ def patch_extracted_msi(name):
 				break
 		assert msnmsgr_name is not None and msnmsgr_dir is not None
 		
-		file_elm = msi_xml_root.find('/table[@name="File"]')
+		file_elm = msi_xml_root.find('./table[@name="File"]')
 		assert file_elm is not None
 		file_rows = file_elm.findall('row')
 		assert file_rows is not None
@@ -239,7 +238,7 @@ def patch_extracted_msi(name):
 			contacts_product_code = get_msi_product_code_from_xml(contacts_xml_root)
 			assert contacts_product_code is not None
 			
-			contacts_elm = contacts_xml_root.find('/table[@name="Component"]')
+			contacts_elm = contacts_xml_root.find('./table[@name="Component"]')
 			assert contacts_elm is not None
 			contacts_rows = contacts_elm.findall('row')
 			assert contacts_rows is not None
@@ -251,7 +250,7 @@ def patch_extracted_msi(name):
 					break
 			assert wlcomm_name is not None
 			
-			contacts_file_elm = contacts_xml_root.find('/table[@name="File"]')
+			contacts_file_elm = contacts_xml_root.find('./table[@name="File"]')
 			assert contacts_file_elm is not None
 			contacts_file_rows = contacts_file_elm.findall('row')
 			assert contacts_file_rows is not None
@@ -299,6 +298,9 @@ def pack_patched_msi(name, product_code_tpl):
 	else:
 		outdir = DIR_FINAL / 'msn'
 	
+	if not outdir.exists():
+		outdir.mkdir()
+	
 	patched_name = 'escargot-{}'.format(name)
 	outfile = outdir / '{}.msi'.format('Messenger' if v[0] >= 14 else patched_name)
 	if outfile.exists():
@@ -315,7 +317,7 @@ def pack_patched_msi(name, product_code_tpl):
 	#product_guid = gen_code(PATCH_NAME, v[0], langcode)
 	#product_version_guid = gen_code(PATCH_NAME, v[0], langcode, PATCH_VERSION)
 	
-	subprocess.call([
+	subprocess.check_call([
 		xml2msi, '-q', '-m',
 		#'-d', product_version_guid, # --product-code
 		#'-g', product_guid, # --upgrade-code
@@ -332,7 +334,7 @@ def pack_patched_msi(name, product_code_tpl):
 	
 	contacts_xml = str(DIR_VERSIONS / 'msn/{}/msi-patched/contacts/Contacts.xml'.format(name))
 	
-	subprocess.call([
+	subprocess.check_call([
 		xml2msi, '-q', '-m',
 		#'-d', product_version_guid, # --product-code
 		#'-g', product_guid, # --upgrade-code
@@ -422,7 +424,7 @@ def pack_patched_yahoo(name):
 # msi2xml XML helper functions
 
 def get_msi_product_code_from_xml(xml_root):
-	property_elm = xml_root.find('/table[@name="Property"]')
+	property_elm = xml_root.find('./table[@name="Property"]')
 	if property_elm is None: return None
 	property_rows = property_elm.findall('row')
 	if property_rows is None: return None
@@ -456,7 +458,7 @@ def add_switcher_to_msi_files_xml(xml_root, msi_files, ini_filename, feature_typ
 	msifilehash.append(create_generic_msi_xml_row('escargotini', '0', '0', '0', '0', '0'))
 
 def find_msifilehash_table(xml_root):
-	msifilehash = xml_root.find('/table[@name="MsiFileHash"]')
+	msifilehash = xml_root.find('./table[@name="MsiFileHash"]')
 	if msifilehash is None:
 		# Create new `MSIFileHash` table and store it in root of XML
 		msifilehash = etree.fromstring(MSIFILEHASH_TABLE_XML)
@@ -465,18 +467,18 @@ def find_msifilehash_table(xml_root):
 	return msifilehash
 
 def add_file_to_msi_xml(root, component_name, feature_type, msi_directory, guid, component_path, filename):
-	media_elm = root.find('/table[@name="Media"]/row')
+	media_elm = root.find('./table[@name="Media"]/row')
 	assert media_elm is not None
 	sequence_new = str(int(media_elm[1].text) + 1)
 	
-	component_elm = root.find('/table[@name="Component"]')
+	component_elm = root.find('./table[@name="Component"]')
 	assert component_elm is not None
 	component_elm.append(create_generic_msi_xml_row(component_name, guid, msi_directory, '0', None, component_path.name))
-	featurecomponents_elm = root.find('/table[@name="FeatureComponents"]')
+	featurecomponents_elm = root.find('./table[@name="FeatureComponents"]')
 	assert featurecomponents_elm is not None
 	featurecomponents_elm.append(create_generic_msi_xml_row(feature_type, component_name))
 	
-	file_elm = root.find('/table[@name="File"]')
+	file_elm = root.find('./table[@name="File"]')
 	assert file_elm is not None
 	file_elm.append(create_file_msi_xml_row(component_path, component_name, filename, sequence_new))
 	
