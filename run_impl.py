@@ -21,7 +21,8 @@ DIR_INSTALLER = ROOT / 'installer'
 DIR_FINAL = ROOT / 'final'
 
 def main():
-	mkdirp(DIR_INPUT)
+	mkdirp(DIR_INPUT / 'msn')
+	mkdirp(DIR_INPUT / 'yahoo')
 	mkdirp(DIR_VERSIONS)
 	mkdirp(DIR_FINAL)
 	
